@@ -1,17 +1,19 @@
 package com.ait.dboshko1.shoppinglist;
 
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.DrawableWrapper;
+import android.app.SearchManager;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -25,6 +27,7 @@ public class MainActivity extends AppCompatActivity implements ItemEditAndCreate
 
     public static final String KEY_ITEM_TO_EDIT = "KEY_ITEM_TO_EDIT";
     private ItemRecyclerAdapter itemAdapter;
+    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,9 +41,21 @@ public class MainActivity extends AppCompatActivity implements ItemEditAndCreate
         initToolbar(drawerLayout);
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        checkForSearchIntent(intent);
+    }
+
+    private void checkForSearchIntent(Intent intent) {
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            String query = intent.getStringExtra(SearchManager.QUERY);
+            itemAdapter.getFilter().filter(query);
+        }
+    }
+
     private DrawerLayout initDrawerLayout() {
         final DrawerLayout drawerLayout = findViewById(R.id.drawerLayout);
-        NavigationView navigationView = (NavigationView) findViewById(R.id.navigationView);
+        NavigationView navigationView = findViewById(R.id.navigationView);
         navigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
@@ -69,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements ItemEditAndCreate
     }
 
     private void initToolbar(final DrawerLayout drawerLayout) {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -82,13 +97,60 @@ public class MainActivity extends AppCompatActivity implements ItemEditAndCreate
         });
     }
 
-    /*
-    private void initTabLayout() {
-        ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-        if (viewPager != null) {
-            setupViewPager(viewPager);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        initSearchManager(menu);
+        return true;
+    }
+
+    private void initSearchManager(Menu menu) {
+        // Code adapted from tutorial at
+        // https://www.androidhive.info/2017/11/android-recyclerview-with-search-filter-functionality/
+        // as well as android documentation on search
+
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        searchView = (SearchView) menu.findItem(R.id.action_search)
+                .getActionView();
+        searchView.setSearchableInfo(searchManager
+                .getSearchableInfo(getComponentName()));
+        searchView.setMaxWidth(Integer.MAX_VALUE);
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                itemAdapter.getFilter().filter(query);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String query) {
+                itemAdapter.getFilter().filter(query);
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_search) {
+            return true;
         }
-    } */
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!searchView.isIconified()) {
+            searchView.setQuery("", false);
+            searchView.setIconified(true);
+            searchView.clearFocus();
+            return;
+        }
+        super.onBackPressed();
+    }
 
     private RecyclerView initRecyclerView() {
         RecyclerView recyclerView = findViewById(R.id.recyclerItem);
@@ -98,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements ItemEditAndCreate
     }
 
     private void initFAB() {
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -129,7 +191,6 @@ public class MainActivity extends AppCompatActivity implements ItemEditAndCreate
             }
         }.start();
     }
-
 
 
     @Override
@@ -166,8 +227,6 @@ public class MainActivity extends AppCompatActivity implements ItemEditAndCreate
 
         Bundle bundle = new Bundle();
         bundle.putSerializable(KEY_ITEM_TO_EDIT, item);
-
-        Log.d("Item", "showEditDialog: " + item.toString());
 
         dialog.setArguments(bundle);
         dialog.show(getFragmentManager(), "Edit Dialog");

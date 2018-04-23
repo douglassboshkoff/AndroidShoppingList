@@ -2,17 +2,18 @@ package com.ait.dboshko1.shoppinglist.adapter;
 
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.ait.dboshko1.shoppinglist.ItemEditAndCreateDialog;
 import com.ait.dboshko1.shoppinglist.MainActivity;
 import com.ait.dboshko1.shoppinglist.R;
 import com.ait.dboshko1.shoppinglist.data.AppDatabase;
@@ -23,13 +24,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapter.ViewHolder> {
+public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapter.ViewHolder>
+        implements Filterable{
 
-    private List<Item> itemList;
+    private List<Item> filteredItemList;
+    private List<Item> originalItemList;
     private Context context;
 
     public ItemRecyclerAdapter(List<Item> initialItems, Context context) {
-        itemList = initialItems;
+        originalItemList = new ArrayList<>(initialItems);
+        filteredItemList = new ArrayList<>(initialItems);
         this.context = context;
     }
 
@@ -43,7 +47,7 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        Item item = itemList.get(holder.getAdapterPosition());
+        Item item = filteredItemList.get(holder.getAdapterPosition());
         setImage(holder, item);
         fillFormsFromItem(holder, item);
         setupButtonListeners(holder);
@@ -57,7 +61,7 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
                 new Thread() {
                     @Override
                     public void run() {
-                        Item item = itemList.get(holder.getAdapterPosition());
+                        Item item = filteredItemList.get(holder.getAdapterPosition());
                         item.setItemBought(!item.isItemBought());
                         AppDatabase.getAppDatabase(context).itemDAO().update(item);
                     }
@@ -67,7 +71,6 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
     }
 
     private void setupButtonListeners(final ViewHolder holder) {
-
         holder.btnDelete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -78,7 +81,7 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
         holder.btnEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity) context).showEditDialog(itemList.get(holder.getAdapterPosition()));
+                ((MainActivity) context).showEditDialog(filteredItemList.get(holder.getAdapterPosition()));
             }
         });
 
@@ -92,13 +95,16 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
     }
 
     public void addItem(Item item) {
-        itemList.add(item);
-        notifyItemInserted(itemList.size() - 1);
+        filteredItemList.add(item);
+        originalItemList.add(item);
+        notifyItemInserted(filteredItemList.size() - 1);
     }
 
-    public void removeItemByIndex(int index) {
-        final Item item = itemList.get(index);
-        itemList.remove(index);
+
+    private void removeItemByIndex(int index) {
+        final Item item = filteredItemList.get(index);
+        filteredItemList.remove(index);
+        originalItemList.remove(item);
         notifyItemRemoved(index);
 
         new Thread() {
@@ -117,20 +123,13 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
                 AppDatabase.getAppDatabase(context).itemDAO().deleteAll();
             }
         }.start();
-        itemList.clear();
+        filteredItemList.clear();
+        originalItemList.clear();
         notifyDataSetChanged();
     }
 
     public void removePurchasedItems() {
-        final List<Long> itemIds = new ArrayList<>();
-        Iterator<Item> it = itemList.iterator();
-        while(it.hasNext()) {
-            Item item = it.next();
-            if(item.isItemBought()) {
-                itemIds.add(item.getId());
-                it.remove();
-            }
-        }
+        final List<Long> itemIds = removePurchasedItemsFromItemList();
         notifyDataSetChanged();
 
         new Thread() {
@@ -142,15 +141,35 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
 
     }
 
+    @NonNull
+    private List<Long> removePurchasedItemsFromItemList() {
+        final List<Long> itemIds = new ArrayList<>();
+        iterateAndDeletePurchased(itemIds, originalItemList);
+        iterateAndDeletePurchased(itemIds, filteredItemList);
+        return itemIds;
+    }
+
+    private void iterateAndDeletePurchased(List<Long> itemIds, List<Item> items) {
+        Iterator<Item> it = items.iterator();
+        while(it.hasNext()) {
+            Item item = it.next();
+            if(item.isItemBought()) {
+                itemIds.add(item.getId());
+                it.remove();
+            }
+        }
+    }
+
     public void updateItem(Item item) {
         int position = getIndexFromItem(item);
-        itemList.set(position, item);
+        filteredItemList.set(position, item);
+        originalItemList.set(position, item);
         notifyItemChanged(position);
     }
 
     private int getIndexFromItem(Item item) {
-        for (int i = 0; i < itemList.size(); i++) {
-            if(item.getId() == itemList.get(i).getId()) {
+        for (int i = 0; i < filteredItemList.size(); i++) {
+            if(item.getId() == filteredItemList.get(i).getId()) {
                 return i;
             }
         }
@@ -175,7 +194,38 @@ public class ItemRecyclerAdapter extends RecyclerView.Adapter<ItemRecyclerAdapte
 
     @Override
     public int getItemCount() {
-        return itemList.size();
+        return filteredItemList.size();
+    }
+
+    @Override
+    public Filter getFilter() {
+        return new Filter() {
+            @Override
+            protected FilterResults performFiltering(CharSequence charSequence) {
+                String charString = charSequence.toString();
+                if (charString.isEmpty()) {
+                    filteredItemList = new ArrayList<>(originalItemList);
+                } else {
+                    List<Item> filteredList = new ArrayList<>();
+                    for (Item item : originalItemList) {
+                        if (item.getItemName().toLowerCase().contains(charString.toLowerCase())) {
+                            filteredList.add(item);
+                        }
+                    }
+                    filteredItemList = filteredList;
+                }
+
+                FilterResults filterResults = new FilterResults();
+                filterResults.values = filteredItemList;
+                return filterResults;
+            }
+
+            @Override
+            protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
+                filteredItemList = (ArrayList<Item>) filterResults.values;
+                notifyDataSetChanged();
+            }
+        };
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder{

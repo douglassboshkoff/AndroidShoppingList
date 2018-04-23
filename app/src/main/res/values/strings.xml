@@ -16,4 +16,6 @@
     <string name="deleted_purchased_items">Deleted Purchased Items</string>
     <string name="create_item">Create Item</string>
     <string name="welcome_to_my_shopping_list">Welcome to My Shopping List</string>
+    <string name="search_hint">Search Item</string>
+    <string name="action_search">Search&#8230;</string>
 </resources>
