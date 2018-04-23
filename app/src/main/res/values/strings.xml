@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">My Shopping List</string>
+    <string name="purchased">Purchased</string>
+    <string name="title_activity_splash">My Shopping List</string>
+    <string name="title_activity_add_and_edit">AddAndEditActivity</string>
+    <string name="name">Name</string>
+    <string name="price">Price</string>
+    <string name="category">Category</string>
+    <string name="description">Description</string>
+    <string name="etError">This field must be filled.</string>
+    <string name="spErrorMsg">You must pick a category.</string>
+    <string name="edit_item">Edit Item</string>
+    <string name="save_item">Save Item</string>
+    <string name="new_item">New Item</string>
+    <string name="delete_all_items">Delete All Items</string>
+    <string name="deleted_purchased_items">Deleted Purchased Items</string>
+    <string name="create_item">Create Item</string>
+    <string name="welcome_to_my_shopping_list">Welcome to My Shopping List</string>
+</resources>

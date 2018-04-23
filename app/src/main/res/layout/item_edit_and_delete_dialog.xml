@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingHorizontal="20dp"
+    android:layout_marginTop="40dp">
+
+
+
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/hintWrapperTVItemName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:hint="@string/name">
+        <EditText
+            android:id="@+id/tvItemName"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+             />
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/hintWrapperTVItemPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="@string/price"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true">
+
+        <EditText
+            android:id="@+id/tvItemPrice"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:inputType="numberDecimal"
+            />
+    </android.support.design.widget.TextInputLayout>
+
+
+    <android.support.design.widget.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/hintWrapperTVItemDescription"
+        android:layout_below="@+id/hintWrapperTVItemName"
+        android:layout_alignParentLeft="true"
+        android:hint="@string/description">
+
+        <EditText
+            android:id="@+id/tvItemDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            />
+
+    </android.support.design.widget.TextInputLayout>
+
+    <CheckBox
+        android:id="@+id/cbPurchased"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/purchased"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/spCategory"/>
+
+
+    <fr.ganfra.materialspinner.MaterialSpinner
+        android:id="@+id/spCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:ms_multiline="false"
+        app:ms_hint="@string/category"
+        app:ms_enableFloatingLabel="true"
+        app:ms_arrowSize="14dp"
+        app:ms_arrowColor="@color/colorAccent"
+        app:ms_alignLabels="false"
+        android:layout_below="@+id/hintWrapperTVItemDescription"
+        android:layout_alignParentLeft="true"/>
+</RelativeLayout>
